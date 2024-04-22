@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+</head>
+<body>
+    <div id="messages"></div>
+    <form action="">
+        <input id="msg" autocomplete="off" /><button type="submit">Send</button>
+    </form>
+    <button id="clearHistory">Clear History</button>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+    $(function (){
+        var ws = new WebSocket('ws://' + window.location.host);
+        ws.binaryType = 'arraybuffer'; // Configuration pour recevoir des données sous forme d'ArrayBuffer
+
+        ws.onopen = function() {
+            console.log('Connexion établie');
+        };
+
+        ws.onmessage = function(event) {
+            if (event.data instanceof ArrayBuffer) {
+                var decoder = new TextDecoder('utf-8');
+                var text = decoder.decode(event.data);
+
+                if (text === "clearHistory") {
+                    $('#messages').empty();
+                } else {
+                    $("#messages").append($("<p>").text(text));
+                }
+            }
+        };
+
+        ws.onclose = function() {
+            console.log('Connexion fermée');
+        }
+
+        $("form").submit(function(e) {
+            e.preventDefault();
+            var encoder = new TextEncoder();
+            var encoded = encoder.encode($("#msg").val());
+            ws.send(encoded);
+            $("#msg").val("");
+            return false;
+        });
+
+        $("#clearHistory").click(function() {
+            var encoder = new TextEncoder();
+            var clearCommand = encoder.encode("clearHistory");
+            ws.send(clearCommand);
+        });
+    });
+    </script>
+</body>
+</html>
